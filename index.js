@@ -14,7 +14,7 @@ module.exports.Autobee = class Autobee {
       unwrap: true,
       apply: async (bee, batch, clocks, change) => {
         await applyAutobeeBatch.call(this, bee, batch, clocks, change, {
-
+          applyStrategy: opts.applyStrategy
         })
       },
       view: core => {
