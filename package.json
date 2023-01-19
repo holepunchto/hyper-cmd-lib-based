@@ -1,0 +1,23 @@
+{
+  "name": "hyper-cmd-lib-based",
+  "version": "0.0.1",
+  "description": "HyperCmd Based lib",
+  "main": "index.js",
+  "dependencies": {
+    "autobase": "https://github.com/holepunchto/autobase",
+    "debug": "^4.3.4",
+    "hyperbee": "^2.0.0",
+    "hypercore": "^10.0.0",
+    "random-access-memory": "^6.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prdn/hyper-cmd-lib-based.git"
+  },
+  "author": "Paolo Ardoino (@prdn)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/prdn/hyper-cmd-lib-based/issues"
+  },
+  "homepage": "https://github.com/prdn/hyper-cmd-lib-based"
+}
