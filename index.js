@@ -6,14 +6,15 @@ module.exports.Autobee = class Autobee {
     this.opts = opts
     this.autobase = autobase
 
-    this._abid = opts.abid !== undefined ?
-      opts.abid : Math.ceil(Math.random() * 100000)
+    this._abid = opts.abid !== undefined
+      ? opts.abid
+      : Math.ceil(Math.random() * 100000)
 
     this.autobase.start({
       unwrap: true,
       apply: async (bee, batch, clocks, change) => {
         await applyAutobeeBatch.call(this, bee, batch, clocks, change, {
-          
+
         })
       },
       view: core => {
@@ -33,6 +34,11 @@ module.exports.Autobee = class Autobee {
 
   async put (key, value, opts) {
     const op = Buffer.from(JSON.stringify({ type: 'put', key, value }))
+    return await this.autobase.append(op, opts)
+  }
+
+  async del (key, opts) {
+    const op = Buffer.from(JSON.stringify({ type: 'del', key }))
     return await this.autobase.append(op, opts)
   }
 
@@ -79,10 +85,24 @@ async function applyAutobeeBatch (bee, batch, clocks, change, opts = {}) {
 }
 
 const STRATEGIES = {
-  default: defaultApplyStrategy
+  default: applyStrategyDefault,
+  local: applyStrategyLocal
 }
 
-async function defaultApplyStrategy (b, node, change, clocks, op, opts = {}) {
+async function applyStrategyDefault (b, node, change, clocks, op, opts = {}) {
+  if (op.type === 'put') {
+    const incoming = encode(op.value, change, node.seq)
+    await b.put(op.key, incoming)
+  } else if (op.type === 'del') {
+    await b.del(op.key)
+  }
+}
+
+function isLocalWinner (clock, change, seq) {
+  return clock.has(change) && (clock.get(change) >= seq)
+}
+
+async function applyStrategyLocal (b, node, change, clocks, op, opts = {}) {
   const localClock = clocks.local
 
   if (op.type === 'put') {
@@ -96,21 +116,26 @@ async function defaultApplyStrategy (b, node, change, clocks, op, opts = {}) {
     }
 
     await handleConflict.call(this, op.type, op.key, incoming, existing.value)
+  } else if (op.type === 'del') {
+    await b.del(op.key)
   }
 
   async function handleConflict (type, key, incoming, existing) {
     const inVal = decode(incoming)
     const exVal = decode(existing)
 
+    if (inVal.value === exVal.value) {
+      return
+    }
+
     debug(`conflict[${this._abid}]: inVal=${JSON.stringify(inVal)}, exVal=${JSON.stringify(exVal)}`)
     const { change: existingChange, seq: existingSeq } = exVal
 
-    if (!localClock.has(existingChange) || (localClock.get(existingChange) < existingSeq)) {
+    if (isLocalWinner(localClock, existingChange, existingSeq)) {
       await b.put(key, existing)
     }
   }
 }
-
 
 function encode (value, change, seq) {
   return JSON.stringify({ value, change: change.toString('hex'), seq })
@@ -120,5 +145,5 @@ function decode (raw) {
   return JSON.parse(raw)
 }
 
-module.exports.decode
-module.exports.encode
+module.exports.decode = decode
+module.exports.encode = decode

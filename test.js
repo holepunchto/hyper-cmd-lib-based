@@ -1,6 +1,5 @@
 const Autobase = require('autobase')
 const Hypercore = require('hypercore')
-const Hyperbee = require('hyperbee')
 const libBased = require('./index')
 
 const db0 = genDB('db0')
@@ -10,7 +9,7 @@ function genDB (name) {
   return new Hypercore(name)
 }
 
-function timeout(ms) {
+function timeout (ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
@@ -44,12 +43,17 @@ async function print () {
 setTimeout(async () => {
   await timeout(1000)
 
-  console.log("\n\n\n\n\n")
+  console.log('\n\n\n\n\n')
 
   await bfs1.put('foo', 'bar[0]')
   await bfs0.put('foo', 'bar[0]')
-  
+
+  await timeout(1000)
+  await print()
+
+  await timeout(1000)
+  await bfs1.del('foo')
+
   await timeout(1000)
   await print()
 }, 1000)
-
