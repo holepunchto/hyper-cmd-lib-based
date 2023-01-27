@@ -12,7 +12,7 @@ function timeout (ms) {
 }
 
 module.exports.genHC = genHC
-module.exports.timeout = timeout 
+module.exports.timeout = timeout
 
 module.exports.genABSet = function (size) {
   const hcs = []
@@ -31,7 +31,7 @@ module.exports.genABSet = function (size) {
       localInput: hcs[i]
     }, { pid: i }))
   }
-  
+
   for (let i = 0; i < size; i++) {
     bds.push(new libBased.Autobee(ctrls[i], {
       abid: i,
