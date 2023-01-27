@@ -17,7 +17,7 @@ module.exports.timeout = timeout
 module.exports.genABSet = function (size) {
   const hcs = []
   const ctrls = []
-  const bsds = []
+  const bds = []
 
   for (let i = 0; i < size; i++) {
     const dn = `_hc-${i}`
@@ -33,7 +33,7 @@ module.exports.genABSet = function (size) {
   }
   
   for (let i = 0; i < size; i++) {
-    bsds.push(new libBased.Autobee(ctrls[i], {
+    bds.push(new libBased.Autobee(ctrls[i], {
       abid: i,
       keyEncoding: 'utf-8',
       valueEncoding: 'binary'
@@ -43,7 +43,7 @@ module.exports.genABSet = function (size) {
   return {
     hcs,
     ctrls,
-    bsds,
+    bds,
     _clear: () => {
       for (let i = 0; i < size; i++) {
         const dn = `_hc-${i}`
@@ -52,3 +52,18 @@ module.exports.genABSet = function (size) {
     }
   }
 }
+
+async function getVal (bd, k) {
+  const data = await bd.get(k)
+  return data && data.value
+}
+
+module.exports.getVal = getVal
+
+async function printKey (bds, k) {
+  for (let i = 0; i < bds.length; i++) {
+    console.log(`bd:${i}`, await bds[i].get(k))
+  }
+}
+
+module.exports.printKey = printKey
