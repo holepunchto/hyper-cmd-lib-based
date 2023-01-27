@@ -67,3 +67,11 @@ async function printKey (bds, k) {
 }
 
 module.exports.printKey = printKey
+
+async function mTestIs (t, bds, k, v) {
+  for (let i = 0; i < bds.length; i++) {
+    t.is(await getVal(bds[i], k), v)
+  }
+}
+
+module.exports.mTestIs = mTestIs
