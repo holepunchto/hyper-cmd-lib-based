@@ -38,7 +38,7 @@ test('basic / random value', async tt => {
 })
 
 test('basic / replica', async tt => {
-  const { bds, repls, _clear } = await utils.genABSetWithReplica(2)
+  const { bds, repls, _clear } = await utils.genABSetWithReplica(3)
 
   await bds[0].put('foo', 'bar[0]')
   await bds[1].put('foo', 'bar[1]')
@@ -49,15 +49,16 @@ test('basic / replica', async tt => {
   await utils.mTestIs(tt, bds, 'foo', 'bar[0]')
 
   repls['0_1'][0].noiseStream.pause()
-  repls['0_1'][1].noiseStream.pause()
+  repls['0_2'][0].noiseStream.pause()
 
   await bds[0].del('foo')
 
   await utils.mTestIs(tt, [bds[0]], 'foo', null)
   await utils.mTestIs(tt, [bds[1]], 'foo', 'bar[0]')
+  await utils.mTestIs(tt, [bds[2]], 'foo', 'bar[0]')
   
   repls['0_1'][0].noiseStream.resume()
-  repls['0_1'][1].noiseStream.resume()
+  repls['0_2'][0].noiseStream.resume()
 
   await utils.mTestIs(tt, bds, 'foo', null)
 
