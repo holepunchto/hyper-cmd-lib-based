@@ -37,7 +37,7 @@ test('basic / random value', async tt => {
   tt.pass()
 })
 
-test('net / resilience', async tt => {
+test('basic / replica', async tt => {
   const { bds, repls, _clear } = await utils.genABSetWithReplica(2)
 
   await bds[0].put('foo', 'bar[0]')
