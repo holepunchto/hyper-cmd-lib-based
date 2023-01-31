@@ -51,12 +51,8 @@ test('net / resilience', async tt => {
   repls['0_1'][0].noiseStream.pause()
   repls['0_1'][1].noiseStream.pause()
 
-  await utils.timeout(50)
-
   await bds[0].del('foo')
 
-  await utils.timeout(50)
-  
   await utils.mTestIs(tt, [bds[0]], 'foo', null)
   await utils.mTestIs(tt, [bds[1]], 'foo', 'bar[0]')
   
