@@ -36,3 +36,35 @@ test('basic / random value', async tt => {
   tt.teardown(_clear)
   tt.pass()
 })
+
+test('net / resilience', async tt => {
+  const { bds, repls, _clear } = await utils.genABSetWithReplica(2)
+
+  await bds[0].put('foo', 'bar[0]')
+  await bds[1].put('foo', 'bar[1]')
+  await bds[1].put('foo', 'bar[1]')
+  await bds[0].put('foo', 'bar[0]')
+  await bds[0].put('foo', 'bar[0]') // incr clock last time
+
+  await utils.mTestIs(tt, bds, 'foo', 'bar[0]')
+
+  repls['0_1'][0].noiseStream.pause()
+  repls['0_1'][1].noiseStream.pause()
+
+  await utils.timeout(50)
+
+  await bds[0].del('foo')
+
+  await utils.timeout(50)
+  
+  await utils.mTestIs(tt, [bds[0]], 'foo', null)
+  await utils.mTestIs(tt, [bds[1]], 'foo', 'bar[0]')
+  
+  repls['0_1'][0].noiseStream.resume()
+  repls['0_1'][1].noiseStream.resume()
+
+  await utils.mTestIs(tt, bds, 'foo', null)
+
+  tt.teardown(_clear)
+  tt.pass()
+})

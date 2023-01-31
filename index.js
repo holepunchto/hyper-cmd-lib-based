@@ -90,6 +90,7 @@ const STRATEGIES = {
 }
 
 async function applyStrategyDefault (b, node, change, clocks, op, opts = {}) {
+  debug(`data[${this._abid}]: inVal=${JSON.stringify(op)}`)
   if (op.type === 'put') {
     const incoming = encode(op.value, change, node.seq)
     await b.put(op.key, incoming)
