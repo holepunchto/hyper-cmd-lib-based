@@ -1,10 +1,16 @@
+const Autobase = require('autobase')
 const Hyperbee = require('hyperbee')
 const debug = require('debug')('autobee')
 
 module.exports.Autobee = class Autobee {
   constructor (autobase, opts = {}) {
     this.opts = opts
-    this.autobase = autobase
+
+    this.autobase = autobase || new Autobase({
+      inputs: opts.inputs,
+      localInput: opts.localInput,
+      eagerUpdate: opts.eagerUpdate
+    })
 
     this._abid = opts.abid !== undefined
       ? opts.abid
@@ -19,7 +25,8 @@ module.exports.Autobee = class Autobee {
       },
       view: core => {
         return new Hyperbee(core.unwrap(), {
-          ...opts,
+          keyEncoding: opts.keyEncoding || 'utf-8',
+          valueEncoding: opts.valueEncoding || 'binary',
           extension: false
         })
       }

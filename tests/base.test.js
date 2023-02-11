@@ -81,3 +81,26 @@ test('basic / stream pause (replica)', async tt => {
   tt.teardown(_clear)
   tt.pass()
 })
+
+async function basicAddInput (tt) {
+  const { bds, _clear, _addInput } = utils.genABSet(3)
+
+  await bds[1].put('foo', 'bar[1]')
+  await bds[0].put('foo', 'bar[0]')
+
+  await utils.mTestIs(tt, bds, 'foo', 'bar[0]')
+
+  await  _addInput()
+  await  _addInput()
+
+  await utils.mTestIs(tt, bds, 'foo', 'bar[0]')
+
+  await bds[1].del('foo')
+
+  await utils.mTestIs(tt, bds, 'foo', null)
+
+  tt.teardown(_clear)
+  tt.pass()
+}
+
+test('basic / add new input', basicAddInput)

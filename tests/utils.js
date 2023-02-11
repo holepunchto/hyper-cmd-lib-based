@@ -1,6 +1,4 @@
-const Autobase = require('autobase')
 const Hypercore = require('hypercore')
-const fs = require('fs')
 const RAM = require('random-access-memory')
 const libBased = require('./../index')
 
@@ -15,26 +13,20 @@ function timeout (ms) {
 module.exports.genHC = genHC
 module.exports.timeout = timeout
 
-module.exports.genABSet = function (size) {
+module.exports.genABSet = function (_size) {
+  let size = _size
+
   const hcs = []
-  const ctrls = []
   const bds = []
 
   for (let i = 0; i < size; i++) {
-    const dn = `_hc-${i}`
-    fs.rmSync(dn, { recursive: true, force: true })
     hcs.push(genHC())
   }
 
   for (let i = 0; i < size; i++) {
-    ctrls.push(new Autobase({
-      inputs: hcs,
-      localInput: hcs[i]
-    }, { pid: i }))
-  }
-
-  for (let i = 0; i < size; i++) {
-    bds.push(new libBased.Autobee(ctrls[i], {
+    bds.push(new libBased.Autobee(null, {
+      inputs: [...hcs],
+      localInput: hcs[i],
       abid: i,
       keyEncoding: 'utf-8',
       valueEncoding: 'binary'
@@ -43,9 +35,25 @@ module.exports.genABSet = function (size) {
 
   return {
     hcs,
-    ctrls,
     bds,
     _clear: () => {
+    },
+    _addInput: async () => {
+      const hc = genHC()
+      hcs.push(hc)
+
+      for (let i = 0; i < size; i++) {
+        const bd = bds[i]
+        await bd.autobase.addInput(hc)
+      }
+
+      size++
+
+      bds.push(new libBased.Autobee(null, {
+        inputs: [...hcs],
+        localInput: hc,
+        abid: size - 1
+      }))
     }
   }
 }
@@ -87,24 +95,16 @@ module.exports.genABSetWithReplica = async function (size) {
       lhcs.push(lhc)
     }
 
-    ctrls.push(new Autobase({
+    bds.push(new libBased.Autobee(null, {
       inputs: lhcs,
       localInput: hcs[i],
-      eagerUpdate: true
-    }, { pid: i }))
-  }
-
-  for (let i = 0; i < size; i++) {
-    bds.push(new libBased.Autobee(ctrls[i], {
-      abid: i,
-      keyEncoding: 'utf-8',
-      valueEncoding: 'binary'
+      eagerUpdate: true,
+      abid: i
     }))
   }
 
   return {
     hcs,
-    ctrls,
     bds,
     repls,
     _clear: () => {
