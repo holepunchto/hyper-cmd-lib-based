@@ -24,6 +24,9 @@ module.exports.Autobee = class Autobee {
         })
       },
       view: core => {
+        core.on('truncate', x => {
+          console.log('truncating', x)
+        })
         return new Hyperbee(core.unwrap(), {
           keyEncoding: opts.keyEncoding || 'utf-8',
           valueEncoding: opts.valueEncoding || 'binary',
