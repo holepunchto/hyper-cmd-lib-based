@@ -98,7 +98,6 @@ module.exports.genABSetWithReplica = async function (size) {
     bds.push(new libBased.Autobee(null, {
       inputs: lhcs,
       localInput: hcs[i],
-      eagerUpdate: true,
       abid: i
     }))
   }
