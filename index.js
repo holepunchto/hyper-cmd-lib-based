@@ -16,6 +16,8 @@ module.exports.Autobee = class Autobee {
       ? opts.abid
       : Math.ceil(Math.random() * 100000)
 
+    this.truncateCnt = 0
+
     this.autobase.start({
       unwrap: true,
       apply: async (bee, batch, clocks, change) => {
@@ -25,8 +27,9 @@ module.exports.Autobee = class Autobee {
       },
       view: core => {
         core.on('truncate', x => {
-          console.log('truncating', x)
+          ++this.truncateCnt
         })
+
         return new Hyperbee(core.unwrap(), {
           keyEncoding: opts.keyEncoding || 'utf-8',
           valueEncoding: opts.valueEncoding || 'binary',
