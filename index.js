@@ -9,6 +9,7 @@ module.exports.Autobee = class Autobee {
     this.autobase = autobase || new Autobase({
       inputs: opts.inputs,
       localInput: opts.localInput,
+      localOutput: opts.localOutput,
       eagerUpdate: opts.eagerUpdate
     })
 
