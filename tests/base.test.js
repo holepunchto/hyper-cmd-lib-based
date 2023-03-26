@@ -11,6 +11,8 @@ async function basicLog (tt, il = true) {
 
   await utils.timeout(1)
 
+  if (!il) await utils.timeout(1)
+
   // await utils.printLogLen(bds)
   await utils.mTestLenIs(tt, bds, 2)
   await utils.mTestIs(tt, bds, 0, 'bar[1]')
@@ -21,6 +23,7 @@ async function basicLog (tt, il = true) {
 }
 
 test('basic-log', basicLog)
+test('basic-kv (replica)', tt => basicLog(tt, false))
 
 async function basicKV (tt, il = true) {
   const { bds, _clear } = il
