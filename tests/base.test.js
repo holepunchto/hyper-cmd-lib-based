@@ -1,17 +1,38 @@
 const test = require('brittle')
 const utils = require('./utils')
 
-async function basic (tt, il = true) {
+async function basicLog (tt, il = true) {
   const { bds, _clear } = il
-    ? utils.genABSet(5)
-    : await utils.genABSetWithReplica(5)
+    ? utils.genABSet(5, 'log')
+    : await utils.genABSetWithReplica(5, 'log')
+
+  await bds[1].append('bar[1]')
+  await bds[0].append('bar[0]')
+
+  await utils.timeout(1)
+
+  // await utils.printLogLen(bds)
+  await utils.mTestLenIs(tt, bds, 2)
+  await utils.mTestIs(tt, bds, 0, 'bar[1]')
+  await utils.mTestIs(tt, bds, 1, 'bar[0]')
+
+  tt.teardown(_clear)
+  tt.pass()
+}
+
+test('basic-log', basicLog)
+
+async function basicKV (tt, il = true) {
+  const { bds, _clear } = il
+    ? utils.genABSet(5, 'kv')
+    : await utils.genABSetWithReplica(5, 'kv')
 
   await bds[1].put('foo', 'bar[1]')
   await bds[0].put('foo', 'bar[0]')
 
   await utils.mTestIs(tt, bds, 'foo', 'bar[0]')
 
-  // utils.printKey(bds, 'foo')
+  // await utils.printKvKey(bds, 'foo')
 
   await bds[1].del('foo')
 
@@ -23,14 +44,14 @@ async function basic (tt, il = true) {
   tt.pass()
 }
 
-test('basic', basic)
-test('basic (replica)', tt => basic(tt, false))
+test('basic-kv', basicKV)
+test('basic-kv (replica)', tt => basicKV(tt, false))
 
-async function basicRand (tt, il = true) {
+async function basicKVRand (tt, il = true) {
   const cnt = 10
   const { bds, _clear } = il
-    ? utils.genABSet(cnt)
-    : await utils.genABSetWithReplica(cnt)
+    ? utils.genABSet(cnt, 'kv')
+    : await utils.genABSetWithReplica(cnt, 'kv')
 
   let exp = null
 
@@ -50,11 +71,11 @@ async function basicRand (tt, il = true) {
   tt.pass()
 }
 
-test('basic / random value', basicRand)
-test('basic / random value (replica)', tt => basicRand(tt, false))
+test('basic-kv / random value', basicKVRand)
+test('basic-kv / random value (replica)', tt => basicKVRand(tt, false))
 
-test('basic / stream pause (replica)', async tt => {
-  const { bds, repls, _clear } = await utils.genABSetWithReplica(3)
+test('basic-kv / stream pause (replica)', async tt => {
+  const { bds, repls, _clear } = await utils.genABSetWithReplica(3, 'kv')
 
   await bds[0].put('foo', 'bar[0]')
   await bds[1].put('foo', 'bar[1]')
@@ -82,8 +103,8 @@ test('basic / stream pause (replica)', async tt => {
   tt.pass()
 })
 
-async function basicAddInput (tt) {
-  const { bds, _clear, _addInput } = utils.genABSet(3)
+async function basicKVAddInput (tt) {
+  const { bds, _clear, _addInput } = utils.genABSet(3, 'kv')
 
   await bds[1].put('foo', 'bar[1]')
   await bds[0].put('foo', 'bar[0]')
@@ -103,4 +124,4 @@ async function basicAddInput (tt) {
   tt.pass()
 }
 
-test('basic / add new input', basicAddInput)
+test('basic-kv / add new input', basicKVAddInput)

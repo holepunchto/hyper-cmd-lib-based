@@ -1,10 +1,12 @@
 const Autobase = require('autobase')
 const Hyperbee = require('hyperbee')
+const Hypercore = require('hypercore')
 const debug = require('debug')('autobee')
 
-module.exports.Autobee = class Autobee {
+module.exports.Autobased = class Autobee {
   constructor (autobase, opts = {}) {
     this.opts = opts
+    this.type = opts.type || 'log'
 
     this.autobase = autobase || new Autobase({
       inputs: opts.inputs,
@@ -17,12 +19,16 @@ module.exports.Autobee = class Autobee {
       ? opts.abid
       : Math.ceil(Math.random() * 100000)
 
-    this.truncateCnt = 0
-
     this.autobase.start({
       unwrap: true,
-      apply: async (bee, batch, clocks, change) => {
-        await applyAutobeeBatch.call(this, bee, batch, clocks, change, {
+      apply: async (struct, batch, clocks, change) => {
+        if (this.type === 'kv') {
+          return await applyKvBatch.call(this, struct, batch, clocks, change, {
+            applyStrategy: opts.applyStrategy
+          })
+        }
+
+        return await applyLogBatch.call(this, struct, batch, clocks, change, {
           applyStrategy: opts.applyStrategy
         })
       },
@@ -31,19 +37,28 @@ module.exports.Autobee = class Autobee {
           ++this.truncateCnt
         })
 
-        return new Hyperbee(core.unwrap(), {
-          keyEncoding: opts.keyEncoding || 'utf-8',
-          valueEncoding: opts.valueEncoding || 'binary',
-          extension: false
-        })
+        if (this.type === 'kv') {
+          return new Hyperbee(core.unwrap(), {
+            keyEncoding: opts.keyEncoding || 'utf-8',
+            valueEncoding: opts.valueEncoding || 'binary',
+            extension: false
+          })
+        }
+
+        return core
       }
     })
 
-    this.bee = this.autobase.view
+    this.view = this.autobase.view
   }
 
   ready () {
     return this.autobase.ready()
+  }
+
+  async append (value, opts) {
+    const op = Buffer.from(JSON.stringify({ type: 'put', value }))
+    return await this.autobase.append(op, opts)
   }
 
   async put (key, value, opts) {
@@ -57,7 +72,7 @@ module.exports.Autobee = class Autobee {
   }
 
   async get (key) {
-    const node = await this.bee.get(key)
+    const node = await this.view.get(key)
     if (!node) {
       return null
     }
@@ -65,9 +80,15 @@ module.exports.Autobee = class Autobee {
     node.value = decode(node.value).value
     return node
   }
+
+  async len () {
+    await this.view.update()
+
+    return this.view.length
+  }
 }
 
-async function applyAutobeeBatch (bee, batch, clocks, change, opts = {}) {
+async function applyKvBatch (bee, batch, clocks, change, opts = {}) {
   const b = bee.batch({ update: false })
 
   for (const node of batch) {
@@ -80,44 +101,81 @@ async function applyAutobeeBatch (bee, batch, clocks, change, opts = {}) {
       continue
     }
 
-    const strategy = opts.applyStrategy || 'default'
+    const strategy = opts.applyStrategy || 'default-kv'
 
     if (typeof strategy === 'string') {
       if (STRATEGIES[strategy]) {
         await STRATEGIES[strategy].call(this, b, node, change, clocks, op, {})
       } else {
-        throw new Error('Autobee: strategy not found')
+        throw new Error('Autobased: strategy not found')
       }
     } else if (typeof strategy === 'function') {
       await opts.applyStrategy.call(this, b, node, change, clocks, op, {})
     } else {
-      throw new Error('Autobee: strategy not found')
+      throw new Error('Autobased: strategy not found')
     }
   }
 
   return await b.flush()
 }
 
-const STRATEGIES = {
-  default: applyStrategyDefault,
-  local: applyStrategyLocal
+async function applyLogBatch (core, batch, clocks, change, opts = {}) {
+  for (const node of batch) {
+    const val = node.value.toString()
+    let op = null
+
+    try {
+      op = JSON.parse(val)
+    } catch (e) {
+      continue
+    }
+
+    const strategy = opts.applyStrategy || 'default-log'
+
+    if (typeof strategy === 'string') {
+      if (STRATEGIES[strategy]) {
+        await STRATEGIES[strategy].call(this, core, node, change, clocks, op, {})
+      } else {
+        throw new Error('Autobased: strategy not found')
+      }
+    } else if (typeof strategy === 'function') {
+      await opts.applyLogStrategy.call(this, core, node, change, clocks, op, {})
+    } else {
+      throw new Error('Autobased: strategy not found')
+    }
+  }
 }
 
-async function applyStrategyDefault (b, node, change, clocks, op, opts = {}) {
+const STRATEGIES = {
+  'default-log': applyStrategyDefaultLog,
+  'default-kv': applyStrategyDefaultKv,
+  'local-kv': applyStrategyLocalKv
+}
+
+async function applyStrategyDefaultKv (b, node, change, clocks, op, opts = {}) {
   debug(`data[${this._abid}]: inVal=${JSON.stringify(op)}`)
+
   if (op.type === 'put') {
     const incoming = encode(op.value, change, node.seq)
     await b.put(op.key, incoming)
+
   } else if (op.type === 'del') {
     await b.del(op.key)
   }
+}
+
+async function applyStrategyDefaultLog (core, node, change, clocks, op, opts = {}) {
+  debug(`data[${this._abid}]: inVal=${JSON.stringify(op)}`)
+
+  const incoming = encode(op.value, change, node.seq)
+  core.append(incoming)
 }
 
 function isLocalWinner (clock, change, seq) {
   return clock.has(change) && (clock.get(change) >= seq)
 }
 
-async function applyStrategyLocal (b, node, change, clocks, op, opts = {}) {
+async function applyStrategyLocalKv (b, node, change, clocks, op, opts = {}) {
   const localClock = clocks.local
 
   if (op.type === 'put') {

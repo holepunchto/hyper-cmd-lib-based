@@ -13,9 +13,7 @@ function timeout (ms) {
 module.exports.genHC = genHC
 module.exports.timeout = timeout
 
-module.exports.genABSet = function (_size) {
-  let size = _size
-
+module.exports.genABSet = function (size, type) {
   const hcs = []
   const bds = []
 
@@ -24,7 +22,9 @@ module.exports.genABSet = function (_size) {
   }
 
   for (let i = 0; i < size; i++) {
-    bds.push(new libBased.Autobee(null, {
+    bds.push(new libBased.Autobased(null, {
+      type: type,
+      storage: RAM,
       inputs: [...hcs],
       localInput: hcs[i],
       abid: i,
@@ -49,7 +49,8 @@ module.exports.genABSet = function (_size) {
 
       size++
 
-      bds.push(new libBased.Autobee(null, {
+      bds.push(new libBased.Autobased(null, {
+        type: 'kv',
         inputs: [...hcs],
         localInput: hc,
         abid: size - 1
@@ -58,7 +59,7 @@ module.exports.genABSet = function (_size) {
   }
 }
 
-module.exports.genABSetWithReplica = async function (size) {
+module.exports.genABSetWithReplica = async function (size, type) {
   const hcs = []
   const ctrls = []
   const repls = {}
@@ -95,7 +96,8 @@ module.exports.genABSetWithReplica = async function (size) {
       lhcs.push(lhc)
     }
 
-    bds.push(new libBased.Autobee(null, {
+    bds.push(new libBased.Autobased(null, {
+      type: type,
       inputs: lhcs,
       localInput: hcs[i],
       abid: i
@@ -118,13 +120,21 @@ async function getVal (bd, k) {
 
 module.exports.getVal = getVal
 
-async function printKey (bds, k) {
+async function printKvKey (bds, k) {
   for (let i = 0; i < bds.length; i++) {
     console.log(`bd:${i}`, await bds[i].get(k))
   }
 }
 
-module.exports.printKey = printKey
+module.exports.printKvKey = printKvKey
+
+async function printLogLen (bds, k) {
+  for (let i = 0; i < bds.length; i++) {
+    console.log(`bd:${i}`, await bds[i].len())
+  }
+}
+
+module.exports.printLogLen = printLogLen
 
 async function mTestIs (t, bds, k, v) {
   for (let i = 0; i < bds.length; i++) {
@@ -133,3 +143,11 @@ async function mTestIs (t, bds, k, v) {
 }
 
 module.exports.mTestIs = mTestIs
+
+async function mTestLenIs (t, bds, len) {
+  for (let i = 0; i < bds.length; i++) {
+    t.is(await bds[i].len(), len)
+  }
+}
+
+module.exports.mTestLenIs = mTestLenIs
