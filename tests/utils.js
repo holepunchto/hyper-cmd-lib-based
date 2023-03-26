@@ -24,7 +24,6 @@ module.exports.genABSet = function (size, type) {
   for (let i = 0; i < size; i++) {
     bds.push(new libBased.Autobased(null, {
       type: type,
-      storage: RAM,
       inputs: [...hcs],
       localInput: hcs[i],
       abid: i,
@@ -50,7 +49,7 @@ module.exports.genABSet = function (size, type) {
       size++
 
       bds.push(new libBased.Autobased(null, {
-        type: 'kv',
+        type: type,
         inputs: [...hcs],
         localInput: hc,
         abid: size - 1
