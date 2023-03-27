@@ -56,28 +56,56 @@ module.exports.Autobased = class Autobee {
   }
 
   async append (value, opts) {
+    if (this.type !== 'log') {
+      throw new Error('PUT: operation not allowed')
+    }
+
     const op = Buffer.from(JSON.stringify({ type: 'put', value }))
     return await this.autobase.append(op, opts)
   }
 
   async put (key, value, opts) {
+    if (this.type !== 'kv') {
+      throw new Error('PUT: operation not allowed')
+    }
+
     const op = Buffer.from(JSON.stringify({ type: 'put', key, value }))
     return await this.autobase.append(op, opts)
   }
 
   async del (key, opts) {
+    if (this.type !== 'kv') {
+      throw new Error('DEL: operation not allowed')
+    }
+
     const op = Buffer.from(JSON.stringify({ type: 'del', key }))
     return await this.autobase.append(op, opts)
   }
 
   async get (key) {
+    if (this.type === 'log') {
+      await this.view.update()
+
+      if (!this.view.length) {
+        return null
+      }
+    }
+
     const node = await this.view.get(key)
     if (!node) {
       return null
     }
 
-    node.value = decode(node.value).value
-    return node
+    const data = {
+      seq: node.seq,
+      value: decode(node.value).value
+    }
+
+    if (data.key !== undefined) {
+      data.key = node.key
+    }
+
+    return data
   }
 
   async len () {
@@ -156,8 +184,7 @@ async function applyStrategyDefaultKv (b, node, change, clocks, op, opts = {}) {
 
   if (op.type === 'put') {
     const incoming = encode(op.value, change, node.seq)
-    console.log(incoming)
-    await b.put(op.key, incoming)
+    await b.put(op.key, Buffer.from(incoming))
 
   } else if (op.type === 'del') {
     await b.del(op.key)
@@ -168,7 +195,7 @@ async function applyStrategyDefaultLog (core, node, change, clocks, op, opts = {
   debug(`data[${this._abid}]: inVal=${JSON.stringify(op)}`)
 
   const incoming = encode(op.value, change, node.seq)
-  core.append(incoming)
+  core.append(Buffer.from(incoming))
 }
 
 function isLocalWinner (clock, change, seq) {
@@ -182,7 +209,7 @@ async function applyStrategyLocalKv (b, node, change, clocks, op, opts = {}) {
     const existing = await b.get(op.key, { update: false })
     const incoming = encode(op.value, change, node.seq)
 
-    await b.put(op.key, incoming)
+    await b.put(op.key, Buffer.from(incoming))
 
     if (!existing) {
       return
@@ -205,7 +232,7 @@ async function applyStrategyLocalKv (b, node, change, clocks, op, opts = {}) {
     const { change: existingChange, seq: existingSeq } = exVal
 
     if (isLocalWinner(localClock, existingChange, existingSeq)) {
-      await b.put(key, existing)
+      await b.put(key, Buffer.from(existing))
     }
   }
 }
