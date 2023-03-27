@@ -156,6 +156,7 @@ async function applyStrategyDefaultKv (b, node, change, clocks, op, opts = {}) {
 
   if (op.type === 'put') {
     const incoming = encode(op.value, change, node.seq)
+    console.log(incoming)
     await b.put(op.key, incoming)
 
   } else if (op.type === 'del') {
