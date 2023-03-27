@@ -39,8 +39,7 @@ module.exports.Autobased = class Autobee {
 
         if (this.type === 'kv') {
           return new Hyperbee(core.unwrap(), {
-            keyEncoding: opts.keyEncoding || 'utf-8',
-            valueEncoding: opts.valueEncoding || 'binary',
+            keyEncoding: 'utf-8',
             extension: false
           })
         }

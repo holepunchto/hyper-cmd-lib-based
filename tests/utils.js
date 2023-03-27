@@ -26,9 +26,7 @@ module.exports.genABSet = function (size, type) {
       type: type,
       inputs: [...hcs],
       localInput: hcs[i],
-      abid: i,
-      keyEncoding: 'utf-8',
-      valueEncoding: 'binary'
+      abid: i
     }))
   }
 
