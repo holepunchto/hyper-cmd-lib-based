@@ -175,8 +175,7 @@ async function applyLogBatch (core, batch, clocks, change, opts = {}) {
 
 const STRATEGIES = {
   'default-log': applyStrategyDefaultLog,
-  'default-kv': applyStrategyDefaultKv,
-  'local-kv': applyStrategyLocalKv
+  'default-kv': applyStrategyDefaultKv
 }
 
 async function applyStrategyDefaultKv (b, node, change, clocks, op, opts = {}) {
@@ -196,45 +195,6 @@ async function applyStrategyDefaultLog (core, node, change, clocks, op, opts = {
 
   const incoming = encode(op.value, change, node.seq)
   core.append(Buffer.from(incoming))
-}
-
-function isLocalWinner (clock, change, seq) {
-  return clock.has(change) && (clock.get(change) >= seq)
-}
-
-async function applyStrategyLocalKv (b, node, change, clocks, op, opts = {}) {
-  const localClock = clocks.local
-
-  if (op.type === 'put') {
-    const existing = await b.get(op.key, { update: false })
-    const incoming = encode(op.value, change, node.seq)
-
-    await b.put(op.key, Buffer.from(incoming))
-
-    if (!existing) {
-      return
-    }
-
-    await handleConflict.call(this, op.type, op.key, incoming, existing.value)
-  } else if (op.type === 'del') {
-    await b.del(op.key)
-  }
-
-  async function handleConflict (type, key, incoming, existing) {
-    const inVal = decode(incoming)
-    const exVal = decode(existing)
-
-    if (inVal.value === exVal.value) {
-      return
-    }
-
-    debug(`conflict[${this._abid}]: inVal=${JSON.stringify(inVal)}, exVal=${JSON.stringify(exVal)}`)
-    const { change: existingChange, seq: existingSeq } = exVal
-
-    if (isLocalWinner(localClock, existingChange, existingSeq)) {
-      await b.put(key, Buffer.from(existing))
-    }
-  }
 }
 
 function encode (value, change, seq) {
