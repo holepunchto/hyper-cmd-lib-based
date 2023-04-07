@@ -23,12 +23,12 @@ async function basicLog (tt, il = true) {
 }
 
 test('basic-log', basicLog)
-test('basic-kv (replica)', tt => basicLog(tt, false))
+test('basic-log (replica)', tt => basicLog(tt, false))
 
-async function basicKV (tt, il = true) {
+async function basicBee (tt, il = true) {
   const { bds, _clear } = il
-    ? utils.genABSet(5, 'kv')
-    : await utils.genABSetWithReplica(5, 'kv')
+    ? utils.genABSet(5, 'bee')
+    : await utils.genABSetWithReplica(5, 'bee')
 
   await bds[1].put('foo', 'bar[1]')
   await bds[0].put('foo', 'bar[0]')
@@ -47,14 +47,14 @@ async function basicKV (tt, il = true) {
   tt.pass()
 }
 
-test('basic-kv', basicKV)
-test('basic-kv (replica)', tt => basicKV(tt, false))
+test('basic-bee', basicBee)
+test('basic-bee (replica)', tt => basicBee(tt, false))
 
-async function basicKVRand (tt, il = true) {
+async function basicBeeRand (tt, il = true) {
   const cnt = 10
   const { bds, _clear } = il
-    ? utils.genABSet(cnt, 'kv')
-    : await utils.genABSetWithReplica(cnt, 'kv')
+    ? utils.genABSet(cnt, 'bee')
+    : await utils.genABSetWithReplica(cnt, 'bee')
 
   let exp = null
 
@@ -74,11 +74,11 @@ async function basicKVRand (tt, il = true) {
   tt.pass()
 }
 
-test('basic-kv / random value', basicKVRand)
-test('basic-kv / random value (replica)', tt => basicKVRand(tt, false))
+test('basic-bee / random value', basicBeeRand)
+test('basic-bee / random value (replica)', tt => basicBeeRand(tt, false))
 
-test('basic-kv / stream pause (replica)', async tt => {
-  const { bds, repls, _clear } = await utils.genABSetWithReplica(3, 'kv')
+test('basic-bee / stream pause (replica)', async tt => {
+  const { bds, repls, _clear } = await utils.genABSetWithReplica(3, 'bee')
 
   await bds[0].put('foo', 'bar[0]')
   await bds[1].put('foo', 'bar[1]')
@@ -106,8 +106,8 @@ test('basic-kv / stream pause (replica)', async tt => {
   tt.pass()
 })
 
-async function basicKVAddInput (tt) {
-  const { bds, _clear, _addInput } = utils.genABSet(3, 'kv')
+async function basicBeeAddInput (tt) {
+  const { bds, _clear, _addInput } = utils.genABSet(3, 'bee')
 
   await bds[1].put('foo', 'bar[1]')
   await bds[0].put('foo', 'bar[0]')
@@ -127,4 +127,4 @@ async function basicKVAddInput (tt) {
   tt.pass()
 }
 
-test('basic-kv / add new input', basicKVAddInput)
+test('basic-bee / add new input', basicBeeAddInput)

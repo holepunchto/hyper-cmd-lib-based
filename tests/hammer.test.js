@@ -3,7 +3,7 @@ const utils = require('./utils')
 
 test.solo('basic random repeated', { timeout: 3600 * 1000 }, async function (tt) {
   const count = 3
-  const { bds, repls, _clear } = await utils.genABSetWithReplica(3, 'kv')
+  const { bds, repls, _clear } = await utils.genABSetWithReplica(3, 'bee')
 
   while (true) {
     console.time('loop')
