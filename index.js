@@ -28,10 +28,11 @@ module.exports.Autobased = class Autobee {
       eagerUpdate: opts.eagerUpdate
     })
 
+    const apply = this.hndl.apply.bind(this)
+
     this.autobase.start({
       unwrap: true,
       apply: async (struct, batch, clocks, change) => {
-        const apply = this.hndl.apply.bind(this)
         return apply(struct, batch, clocks, change, {
           applyStrategy: opts.applyStrategy
         })
