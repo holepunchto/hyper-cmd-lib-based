@@ -31,7 +31,7 @@ module.exports.Autobased = class Autobee {
     const apply = this.hndl.apply.bind(this)
 
     this.autobase.start({
-      unwrap: true,
+      ...this.hndl.abStartsOps || {},
       apply: async (struct, batch, clocks, change) => {
         return apply(struct, batch, clocks, change, {
           applyStrategy: opts.applyStrategy
