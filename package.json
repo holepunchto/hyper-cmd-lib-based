@@ -18,7 +18,7 @@
     "url": "https://github.com/prdn/hyper-cmd-lib-based.git"
   },
   "author": "Paolo Ardoino (@prdn)",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/prdn/hyper-cmd-lib-based/issues"
   },
